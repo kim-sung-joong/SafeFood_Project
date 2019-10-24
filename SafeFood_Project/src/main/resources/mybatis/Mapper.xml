@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mybatis.Mapper">
+	<!-- 회원가입 -->
+	<insert id="addMember" parameterType="Member">
+		INSERT INTO user VALUES (#{id}, #{pass}, #{name}, #{address}, #{phone}, #{allergy});
+	</insert>
+	
+	<!-- 로그인 -->
+	<select id="login" parameterType="Member" resultType="Member">
+		SELECT * FROM user WHERE id=#{id} and pass=#{pass};
+	</select>
+	
+	<!-- 회원정보 조회 -->
+	<select id="memberInfo" parameterType="String" resultType="Member">
+		SELECT * FROM user WHERE id=#{id};
+	</select>
+	
+	<!-- 회원정보 조회 -->
+	<select id="findPass" parameterType="String" resultType="String">
+		SELECT pass FROM user WHERE id=#{id};
+	</select>
+	
+	<!-- 회원정보 변경 -->
+	<update id="updateMember" parameterType="Member">
+		UPDATE user SET name=#{name}, address=#{address}, phone=#{phone}, allergy=#{allergy} WHERE id=#{id};
+	</update>
+	
+	<!-- 회원탈퇴 -->
+	<delete id="deleteMember" parameterType="Member">
+		DELETE FROM user WHERE id=#{id} and pass=#{pass};
+	</delete>
+	
+	<!-- 회원이 먹은 음식 추가하기 전 매칭되는 튜플이 있는지 확인 -->
+	<select id="confirmEat" parameterType="Eat" resultType="int">
+		SELECT count(*) FROM eatlist WHERE id=#{id} and code=#{code};
+	</select>
+	
+	<!-- 회원과 코드가 매칭되는 데이터가 없을 경우 추가 -->
+	<insert id="insertEat" parameterType="Eat">
+		INSERT INTO eatlist VALUES (#{id}, #{code}, now());
+	</insert>
+	
+	<!-- 회원이 먹은 음식 추가 -->
+	<update id="updateEat" parameterType="Eat">
+		UPDATE eatlist SET count=count+1 WHERE id=#{id} and code=#{code};
+	</update>
+	
+	<!-- 회원이 먹은 음식들 확인 -->
+	<select id="selectEat" parameterType="String" resultType="Food">
+		SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat, count(eat.time) as count
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code group by eat.code;
+	</select>
+	
+	<!-- 상품 전체 검색 -->
+	<select id="selectAll" resultType="Food">
+		SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat
+		FROM foodinfo as f1, foodnutrition as f2 WHERE f1.name = f2.name;
+	</select>
+	
+	<!-- 상품 하나 검색 -->
+	<select id="selectOne" resultType="Food">
+		SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat
+		FROM foodinfo as f1, foodnutrition as f2 WHERE f1.name = f2.name;
+	</select>
+	
+	<!-- 상품 제품명으로 검색 -->
+    <select id="selectByName" parameterType="String" resultType="Food">
+    	SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat
+		FROM foodinfo as f1, foodnutrition as f2 WHERE f1.name = f2.name and (f1.name LIKE CONCAT('%', #{name}, '%') or f1.maker LIKE CONCAT('%', #{name}, '%') or f1.material LIKE CONCAT('%', #{name}, '%'));
+    </select>
+    
+    <!-- 질문 insert -->
+    <insert id="insertQuestion" parameterType="question">
+    	INSERT INTO question (qtitle, qid, qsummary, qcount, qtime) VALUES (#{qtitle}, #{qid}, #{qsummary}, 0, now());
+    </insert>
+
+    <!-- 답변 insert -->
+    <insert id="insertAnswer" parameterType="answer">
+    	INSERT INTO answer (qnum, aid, asummary, atime) VALUES (#{qnum}, #{aid}, #{asummary}, now());
+    </insert>
+
+    <!-- 질문 update -->
+    <update id="updateQuestion" parameterType="question">
+    	UPDATE question SET qtitle = #{qtitle}, qid = #{qid}, qsummary =  #{qsummary}, qcount = 0, qtime = now()
+    	WHERE qnum = #{qnum};
+    </update>
+    
+    <!-- 조회수 증가 -->
+    <update id="countUp" parameterType="int">
+    	UPDATE question SET qcount = qcount+1 WHERE qnum = #{qnum};
+    </update>
+
+    <!-- 답변 update -->
+    <update id="updateAnswer" parameterType="answer">
+    	UPDATE answer SET qnum = #{qnum}, aid = #{aid}, asummary =  #{asummary}, atime = now()
+    	WHERE anum = #{anum};
+    </update>
+
+    <!-- 질문 delete -->
+    <delete id="deleteQuestion" parameterType="int">
+    	DELETE FROM question 
+    	WHERE qnum = #{qnum};
+    </delete>
+
+    <!-- 답변 delete -->
+    <delete id="deleteAnswer" parameterType="int">
+    	DELETE FROM answer 
+    	WHERE anum = #{anum};
+    </delete>
+    
+    <!-- 질문에 추가된 답변 -->
+    <delete id="deleteContain" parameterType="int">
+    	DELETE FROM answer
+    	WHERE qnum = #{qnum};
+    </delete>
+    
+    <!-- 질문 검색 다 리턴-->
+    <select id="searchQuestionAll" resultType="question">
+    	SELECT *
+    	FROM question;
+    </select>
+    
+    <select id="searchAnswerAll" resultType="answer">
+    	SELECT * FROM answer;
+    </select>
+	
+	<!-- 검색한 질문 -->
+	<select id="searchQuestion" resultType="question" parameterType="String">
+    	SELECT *
+    	FROM question
+    	WHERE qtitle LIKE concat('%',#{qtitle},'%');
+    </select>
+
+    <!-- 답변 검색 다 리턴-->
+    <select id="searchAnswer" resultType="answer" parameterType="int">
+    	SELECT *
+    	FROM answer
+    	WHERE qnum = #{qnum};
+    </select>
+    
+    <!-- 공지사항 조회 -->
+    <select id="searchNoticeAll" resultType="notice">
+    	SELECT * FROM notice;
+    </select>
+    
+    <!-- 회원이 섭취한 음식의 전체 섭취량을 계산하기 위해 하나 플러스 -->
+    <update id="eatFood" parameterType="int">
+    	UPDATE foodinfo SET count = count + 1 WHERE code = #{code};
+    </update>
+    
+    <!-- 추천 음식 3개만 로그인 안됨 -->
+    <select id="recommandLimitThree" resultType="food">
+    	SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat
+		FROM foodinfo as f1, foodnutrition as f2 WHERE f1.name = f2.name ORDER BY count DESC LIMIT 3;
+    </select>
+    
+    <!-- 추천 음식 다 로그인 됨 -->
+    <select id = "recommand" resultType="food" parameterType="String">
+    	SELECT f.code, f.name, f.maker, f.material, f.img, f.year, f.supportpereat, f.calory, f.carbo, f.protein, f.fat, f.sugar, f.natrium, f.chole, f.fattyacid, f.transfat
+    	FROM (select f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat, f1.count from foodinfo as f1, foodnutrition as f2 where f1.name = f2.name) as f
+    	left join
+    	(select id, code, count(time) as count from eatlist where id=#{id} group by code) as e
+    	on f.code = e.code and e.id = #{id}
+		order by e.count, f.count desc;
+    </select>
+    
+    <!-- 베스트 푸드 순서 -->
+    <select id="bestfood" resultType="food">
+    	SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat
+		FROM foodinfo as f1, foodnutrition as f2 WHERE f1.name = f2.name ORDER BY count DESC;
+    </select>
+    
+    <!-- 하루 회원이 먹은 음식들 확인 -->
+	<select id="oneday" parameterType="String" resultType="Food">
+		SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat, count(eat.time) as count
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code and eat.time >= date_add(now(), interval -1 day) group by eat.code;
+	</select>
+	
+	<!-- 하루 먹은 음식의 칼로리 -->
+	<select id="onedayCalory" parameterType="String" resultType="Calory">
+		SELECT sum(f2.supportpereat) as supportpereat, sum(f2.calory) as calory, sum(f2.carbo) as carbo, sum(f2.protein) as protein, sum(f2.fat) as fat, sum(f2.sugar) as sugar, sum(f2.natrium) as natrium, sum(f2.chole) as chole, sum(f2.fattyacid) as fattyacid, sum(f2.transfat) as transfat
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code and eat.time >= date_add(now(), interval -1 day);
+	</select>
+	
+    <!-- 삼일 회원이 먹은 음식들 확인 -->
+	<select id="threeday" parameterType="String" resultType="Food">
+		SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat, count(eat.time) as count
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code and eat.time >= date_add(now(), interval -3 day) group by eat.code;
+	</select>
+	
+	<!-- 삼일 먹은 음식의 칼로리 -->
+	<select id="threedayCalory" parameterType="String" resultType="Calory">
+		SELECT sum(f2.supportpereat) as supportpereat, sum(f2.calory) as calory, sum(f2.carbo) as carbo, sum(f2.protein) as protein, sum(f2.fat) as fat, sum(f2.sugar) as sugar, sum(f2.natrium) as natrium, sum(f2.chole) as chole, sum(f2.fattyacid) as fattyacid, sum(f2.transfat) as transfat
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code and eat.time >= date_add(now(), interval -3 day);
+	</select>
+	
+    <!-- 한주 회원이 먹은 음식들 확인 -->
+	<select id="weekday" parameterType="String" resultType="Food">
+		SELECT f1.code, f1.name, f1.maker, f1.material, f1.img, f2.year, f2.supportpereat, f2.calory, f2.carbo, f2.protein, f2.fat, f2.sugar, f2.natrium, f2.chole, f2.fattyacid, f2.transfat, count(eat.time) as count
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code and eat.time >= date_add(now(), interval -7 day) group by eat.code;
+	</select>
+	
+	<!-- 한주 먹은 음식의 칼로리 -->
+	<select id="weekCalory" parameterType="String" resultType="Calory">
+		SELECT sum(f2.supportpereat) as supportpereat, sum(f2.calory) as calory, sum(f2.carbo) as carbo, sum(f2.protein) as protein, sum(f2.fat) as fat, sum(f2.sugar) as sugar, sum(f2.natrium) as natrium, sum(f2.chole) as chole, sum(f2.fattyacid) as fattyacid, sum(f2.transfat) as transfat
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code and eat.time >= date_add(now(), interval -7 day);
+	</select>
+	
+	<!-- 전체 먹은 음식의 칼로리 -->
+	<select id="totalCalory" parameterType="String" resultType="Calory">
+		SELECT sum(f2.supportpereat) as supportpereat, sum(f2.calory) as calory, sum(f2.carbo) as carbo, sum(f2.protein) as protein, sum(f2.fat) as fat, sum(f2.sugar) as sugar, sum(f2.natrium) as natrium, sum(f2.chole) as chole, sum(f2.fattyacid) as fattyacid, sum(f2.transfat) as transfat
+		FROM foodinfo as f1, foodnutrition as f2, eatlist as eat WHERE eat.id = #{id} and f1.name = f2.name and f1.code = eat.code;
+	</select>
+</mapper>
+
+<!-- mapper 파일 : sql 문 작성 -->
